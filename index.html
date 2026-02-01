@@ -396,6 +396,118 @@
             margin-bottom: 8px;
         }
 
+        /* Settings */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .setting-item label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .setting-item input {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .setting-item input:focus {
+            outline: none;
+            border-color: #e91e63;
+        }
+
+        .save-settings-btn {
+            width: 100%;
+            padding: 12px;
+            background: #e91e63;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .save-settings-btn:hover {
+            background: #c2185b;
+        }
+
+        .settings-note {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        /* Predictions */
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .prediction-item {
+            text-align: center;
+            padding: 20px 16px;
+            border-radius: 12px;
+        }
+
+        .period-prediction {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+        }
+
+        .ovulation-prediction {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+
+        .prediction-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .prediction-date {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .prediction-countdown {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .period-prediction .prediction-countdown {
+            color: #e91e63;
+        }
+
+        .ovulation-prediction .prediction-countdown {
+            color: #2196f3;
+        }
+
+        .fertile-window {
+            background: #e8f5e9;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #2e7d32;
+            text-align: center;
+        }
+
         /* Responsive */
         @media (max-width: 600px) {
             body {
@@ -507,6 +619,41 @@
             </div>
         </div>
 
+        <!-- Settings Card -->
+        <div class="card">
+            <div class="card-title">周期设置</div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="cycleLength">月经周期（天）</label>
+                    <input type="number" id="cycleLength" min="21" max="45" value="29">
+                </div>
+                <div class="setting-item">
+                    <label for="periodDuration">经期天数</label>
+                    <input type="number" id="periodDuration" min="2" max="10" value="5">
+                </div>
+            </div>
+            <button class="save-settings-btn" onclick="saveSettings()">保存设置</button>
+            <p class="settings-note">设置将用于预测（记录2次以上后会自动根据实际数据计算）</p>
+        </div>
+
+        <!-- Prediction Card -->
+        <div class="card">
+            <div class="card-title">下次预测</div>
+            <div class="prediction-grid">
+                <div class="prediction-item period-prediction">
+                    <div class="prediction-label">下次月经</div>
+                    <div class="prediction-date" id="nextPeriodDate">--</div>
+                    <div class="prediction-countdown" id="nextPeriodCountdown"></div>
+                </div>
+                <div class="prediction-item ovulation-prediction">
+                    <div class="prediction-label">排卵日</div>
+                    <div class="prediction-date" id="nextOvulationDate">--</div>
+                    <div class="prediction-countdown" id="nextOvulationCountdown"></div>
+                </div>
+            </div>
+            <div class="fertile-window" id="fertileWindow"></div>
+        </div>
+
         <!-- Tips Card -->
         <div class="card">
             <div class="card-title">使用提示</div>
@@ -539,7 +686,7 @@
         let data = {
             records: [], // Array of { startDate, endDate }
             settings: {
-                defaultCycleLength: 28,
+                defaultCycleLength: 29,
                 defaultDuration: 5
             }
         };
@@ -552,10 +699,100 @@
         // Initialize
         function init() {
             loadData();
+            loadSettings();
             renderCalendar();
             updateStats();
+            updatePredictions();
             renderHistory();
             updateRecordStatus();
+        }
+
+        // Load settings into UI
+        function loadSettings() {
+            document.getElementById('cycleLength').value = data.settings.defaultCycleLength;
+            document.getElementById('periodDuration').value = data.settings.defaultDuration;
+        }
+
+        // Save settings
+        function saveSettings() {
+            const cycleLength = parseInt(document.getElementById('cycleLength').value);
+            const periodDuration = parseInt(document.getElementById('periodDuration').value);
+
+            if (cycleLength >= 21 && cycleLength <= 45) {
+                data.settings.defaultCycleLength = cycleLength;
+            }
+            if (periodDuration >= 2 && periodDuration <= 10) {
+                data.settings.defaultDuration = periodDuration;
+            }
+
+            saveData();
+            renderCalendar();
+            updateStats();
+            updatePredictions();
+            alert('设置已保存！');
+        }
+
+        // Update prediction display
+        function updatePredictions() {
+            const avgCycle = calculateAverageCycle();
+            const avgDuration = calculateAverageDuration();
+            const completedRecords = data.records.filter(r => r.endDate);
+
+            if (completedRecords.length === 0) {
+                document.getElementById('nextPeriodDate').textContent = '暂无数据';
+                document.getElementById('nextPeriodCountdown').textContent = '';
+                document.getElementById('nextOvulationDate').textContent = '暂无数据';
+                document.getElementById('nextOvulationCountdown').textContent = '';
+                document.getElementById('fertileWindow').textContent = '记录第一次月经后即可预测';
+                return;
+            }
+
+            const lastStart = new Date(completedRecords[completedRecords.length - 1].startDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Next period prediction
+            const nextPeriod = new Date(lastStart);
+            nextPeriod.setDate(nextPeriod.getDate() + avgCycle);
+
+            const daysUntilPeriod = Math.floor((nextPeriod - today) / (1000 * 60 * 60 * 24));
+
+            document.getElementById('nextPeriodDate').textContent = formatChineseDate(nextPeriod);
+            if (daysUntilPeriod > 0) {
+                document.getElementById('nextPeriodCountdown').textContent = `${daysUntilPeriod}天后`;
+            } else if (daysUntilPeriod === 0) {
+                document.getElementById('nextPeriodCountdown').textContent = '就是今天';
+            } else {
+                document.getElementById('nextPeriodCountdown').textContent = `已超${Math.abs(daysUntilPeriod)}天`;
+            }
+
+            // Ovulation prediction (14 days before next period)
+            const nextOvulation = new Date(nextPeriod);
+            nextOvulation.setDate(nextOvulation.getDate() - 14);
+
+            const daysUntilOvulation = Math.floor((nextOvulation - today) / (1000 * 60 * 60 * 24));
+
+            document.getElementById('nextOvulationDate').textContent = formatChineseDate(nextOvulation);
+            if (daysUntilOvulation > 0) {
+                document.getElementById('nextOvulationCountdown').textContent = `${daysUntilOvulation}天后`;
+            } else if (daysUntilOvulation === 0) {
+                document.getElementById('nextOvulationCountdown').textContent = '就是今天';
+            } else {
+                document.getElementById('nextOvulationCountdown').textContent = `已过${Math.abs(daysUntilOvulation)}天`;
+            }
+
+            // Fertile window
+            const fertileStart = new Date(nextOvulation);
+            fertileStart.setDate(fertileStart.getDate() - 5);
+            const fertileEnd = new Date(nextOvulation);
+            fertileEnd.setDate(fertileEnd.getDate() + 1);
+
+            document.getElementById('fertileWindow').innerHTML =
+                `<strong>易孕期：</strong>${formatChineseDate(fertileStart)} - ${formatChineseDate(fertileEnd)}`;
+        }
+
+        function formatChineseDate(date) {
+            return `${date.getMonth() + 1}月${date.getDate()}日`;
         }
 
         // Data persistence
@@ -719,6 +956,7 @@
             saveData();
             renderCalendar();
             updateStats();
+            updatePredictions();
             renderHistory();
             updateRecordStatus();
         }
@@ -860,6 +1098,7 @@
                 saveData();
                 renderCalendar();
                 updateStats();
+                updatePredictions();
                 renderHistory();
                 updateRecordStatus();
             };
@@ -882,6 +1121,7 @@
                 saveData();
                 renderCalendar();
                 updateStats();
+                updatePredictions();
                 renderHistory();
                 updateRecordStatus();
             };
@@ -1006,6 +1246,7 @@
                 saveData();
                 renderCalendar();
                 updateStats();
+                updatePredictions();
                 renderHistory();
                 updateRecordStatus();
             }
