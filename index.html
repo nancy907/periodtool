@@ -508,6 +508,160 @@
             text-align: center;
         }
 
+        /* Symptoms */
+        .symptoms-section {
+            margin-top: 16px;
+        }
+
+        .symptom-group {
+            margin-bottom: 16px;
+        }
+
+        .symptom-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .symptom-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .symptom-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .symptom-btn:hover {
+            border-color: #e91e63;
+        }
+
+        .symptom-btn.active {
+            background: #e91e63;
+            color: white;
+            border-color: #e91e63;
+        }
+
+        .symptom-btn.active.mild {
+            background: #ffb74d;
+            border-color: #ffb74d;
+        }
+
+        .symptom-btn.active.moderate {
+            background: #ff8a65;
+            border-color: #ff8a65;
+        }
+
+        .symptom-btn.active.severe {
+            background: #ef5350;
+            border-color: #ef5350;
+        }
+
+        .symptom-btn.active.good {
+            background: #66bb6a;
+            border-color: #66bb6a;
+        }
+
+        .symptom-btn.active.normal {
+            background: #78909c;
+            border-color: #78909c;
+        }
+
+        .symptom-btn.active.poor {
+            background: #ef5350;
+            border-color: #ef5350;
+        }
+
+        .notes-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+            font-family: inherit;
+        }
+
+        .notes-input:focus {
+            outline: none;
+            border-color: #e91e63;
+        }
+
+        .save-symptoms-btn {
+            width: 100%;
+            padding: 12px;
+            background: #e91e63;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+
+        .save-symptoms-btn:hover {
+            background: #c2185b;
+        }
+
+        .no-period-notice {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        /* History symptoms */
+        .history-symptoms {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .symptom-tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .symptom-tag.pain {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .symptom-tag.appetite {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .symptom-tag.sleep {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .symptom-tag.mood {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .history-notes {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #888;
+            font-style: italic;
+        }
+
         /* Responsive */
         @media (max-width: 600px) {
             body {
@@ -585,6 +739,14 @@
             <div class="record-section">
                 <button class="record-btn start" onclick="recordPeriodStart()">记录月经开始</button>
                 <button class="record-btn end" onclick="recordPeriodEnd()">记录月经结束</button>
+            </div>
+        </div>
+
+        <!-- Symptoms Card -->
+        <div class="card">
+            <div class="card-title">症状记录</div>
+            <div id="symptomsContent">
+                <div class="no-period-notice">记录月经开始后可记录症状</div>
             </div>
         </div>
 
@@ -705,6 +867,7 @@
             updatePredictions();
             renderHistory();
             updateRecordStatus();
+            updateSymptomsUI();
         }
 
         // Load settings into UI
@@ -730,6 +893,139 @@
             updateStats();
             updatePredictions();
             alert('设置已保存！');
+        }
+
+        // Symptoms tracking
+        function updateSymptomsUI() {
+            const symptomsContent = document.getElementById('symptomsContent');
+            const ongoingRecord = data.records.find(r => !r.endDate);
+
+            if (!ongoingRecord) {
+                symptomsContent.innerHTML = '<div class="no-period-notice">记录月经开始后可记录症状</div>';
+                return;
+            }
+
+            const symptoms = ongoingRecord.symptoms || {};
+
+            symptomsContent.innerHTML = `
+                <div class="symptoms-section">
+                    <div class="symptom-group">
+                        <span class="symptom-label">疼痛程度</span>
+                        <div class="symptom-options">
+                            <button class="symptom-btn ${symptoms.pain === 'none' ? 'active' : ''}" onclick="setSymptom('pain', 'none')">无痛</button>
+                            <button class="symptom-btn mild ${symptoms.pain === 'mild' ? 'active' : ''}" onclick="setSymptom('pain', 'mild')">轻微</button>
+                            <button class="symptom-btn moderate ${symptoms.pain === 'moderate' ? 'active' : ''}" onclick="setSymptom('pain', 'moderate')">中等</button>
+                            <button class="symptom-btn severe ${symptoms.pain === 'severe' ? 'active' : ''}" onclick="setSymptom('pain', 'severe')">严重</button>
+                        </div>
+                    </div>
+
+                    <div class="symptom-group">
+                        <span class="symptom-label">胃口</span>
+                        <div class="symptom-options">
+                            <button class="symptom-btn good ${symptoms.appetite === 'good' ? 'active' : ''}" onclick="setSymptom('appetite', 'good')">很好</button>
+                            <button class="symptom-btn normal ${symptoms.appetite === 'normal' ? 'active' : ''}" onclick="setSymptom('appetite', 'normal')">一般</button>
+                            <button class="symptom-btn poor ${symptoms.appetite === 'poor' ? 'active' : ''}" onclick="setSymptom('appetite', 'poor')">不好</button>
+                            <button class="symptom-btn ${symptoms.appetite === 'craving' ? 'active' : ''}" onclick="setSymptom('appetite', 'craving')">特别想吃</button>
+                        </div>
+                    </div>
+
+                    <div class="symptom-group">
+                        <span class="symptom-label">睡眠质量</span>
+                        <div class="symptom-options">
+                            <button class="symptom-btn good ${symptoms.sleep === 'good' ? 'active' : ''}" onclick="setSymptom('sleep', 'good')">很好</button>
+                            <button class="symptom-btn normal ${symptoms.sleep === 'normal' ? 'active' : ''}" onclick="setSymptom('sleep', 'normal')">一般</button>
+                            <button class="symptom-btn poor ${symptoms.sleep === 'poor' ? 'active' : ''}" onclick="setSymptom('sleep', 'poor')">失眠</button>
+                            <button class="symptom-btn ${symptoms.sleep === 'drowsy' ? 'active' : ''}" onclick="setSymptom('sleep', 'drowsy')">嗜睡</button>
+                        </div>
+                    </div>
+
+                    <div class="symptom-group">
+                        <span class="symptom-label">情绪</span>
+                        <div class="symptom-options">
+                            <button class="symptom-btn good ${symptoms.mood === 'good' ? 'active' : ''}" onclick="setSymptom('mood', 'good')">开心</button>
+                            <button class="symptom-btn normal ${symptoms.mood === 'normal' ? 'active' : ''}" onclick="setSymptom('mood', 'normal')">平静</button>
+                            <button class="symptom-btn ${symptoms.mood === 'irritable' ? 'active' : ''}" onclick="setSymptom('mood', 'irritable')">烦躁</button>
+                            <button class="symptom-btn poor ${symptoms.mood === 'sad' ? 'active' : ''}" onclick="setSymptom('mood', 'sad')">低落</button>
+                        </div>
+                    </div>
+
+                    <div class="symptom-group">
+                        <span class="symptom-label">备注</span>
+                        <textarea class="notes-input" id="symptomNotes" placeholder="记录其他感受...">${symptoms.notes || ''}</textarea>
+                    </div>
+
+                    <button class="save-symptoms-btn" onclick="saveSymptoms()">保存症状记录</button>
+                </div>
+            `;
+        }
+
+        function setSymptom(type, value) {
+            const ongoingIndex = data.records.findIndex(r => !r.endDate);
+            if (ongoingIndex === -1) return;
+
+            if (!data.records[ongoingIndex].symptoms) {
+                data.records[ongoingIndex].symptoms = {};
+            }
+
+            // Toggle: if same value clicked, remove it
+            if (data.records[ongoingIndex].symptoms[type] === value) {
+                delete data.records[ongoingIndex].symptoms[type];
+            } else {
+                data.records[ongoingIndex].symptoms[type] = value;
+            }
+
+            saveData();
+            updateSymptomsUI();
+        }
+
+        function saveSymptoms() {
+            const ongoingIndex = data.records.findIndex(r => !r.endDate);
+            if (ongoingIndex === -1) return;
+
+            if (!data.records[ongoingIndex].symptoms) {
+                data.records[ongoingIndex].symptoms = {};
+            }
+
+            const notes = document.getElementById('symptomNotes').value;
+            data.records[ongoingIndex].symptoms.notes = notes;
+
+            saveData();
+            alert('症状记录已保存！');
+        }
+
+        function getSymptomsDisplay(symptoms) {
+            if (!symptoms) return '';
+
+            const labels = {
+                pain: { none: '无痛', mild: '轻微疼痛', moderate: '中等疼痛', severe: '严重疼痛' },
+                appetite: { good: '胃口好', normal: '胃口一般', poor: '胃口差', craving: '特别想吃' },
+                sleep: { good: '睡眠好', normal: '睡眠一般', poor: '失眠', drowsy: '嗜睡' },
+                mood: { good: '心情好', normal: '心情平静', irritable: '烦躁', sad: '心情低落' }
+            };
+
+            const tags = [];
+            if (symptoms.pain && labels.pain[symptoms.pain]) {
+                tags.push(`<span class="symptom-tag pain">${labels.pain[symptoms.pain]}</span>`);
+            }
+            if (symptoms.appetite && labels.appetite[symptoms.appetite]) {
+                tags.push(`<span class="symptom-tag appetite">${labels.appetite[symptoms.appetite]}</span>`);
+            }
+            if (symptoms.sleep && labels.sleep[symptoms.sleep]) {
+                tags.push(`<span class="symptom-tag sleep">${labels.sleep[symptoms.sleep]}</span>`);
+            }
+            if (symptoms.mood && labels.mood[symptoms.mood]) {
+                tags.push(`<span class="symptom-tag mood">${labels.mood[symptoms.mood]}</span>`);
+            }
+
+            let html = '';
+            if (tags.length > 0) {
+                html += `<div class="history-symptoms">${tags.join('')}</div>`;
+            }
+            if (symptoms.notes) {
+                html += `<div class="history-notes">"${symptoms.notes}"</div>`;
+            }
+
+            return html;
         }
 
         // Update prediction display
@@ -959,6 +1255,7 @@
             updatePredictions();
             renderHistory();
             updateRecordStatus();
+            updateSymptomsUI();
         }
 
         function addPeriodDay(dateStr) {
@@ -1101,6 +1398,7 @@
                 updatePredictions();
                 renderHistory();
                 updateRecordStatus();
+                updateSymptomsUI();
             };
             openModal();
         }
@@ -1124,6 +1422,7 @@
                 updatePredictions();
                 renderHistory();
                 updateRecordStatus();
+                updateSymptomsUI();
             };
             openModal();
         }
@@ -1227,12 +1526,14 @@
                 const start = new Date(record.startDate);
                 const end = new Date(record.endDate);
                 const duration = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                const symptomsHtml = getSymptomsDisplay(record.symptoms);
 
                 return `
                     <div class="history-item">
-                        <div>
+                        <div style="flex: 1;">
                             <div class="history-dates">${formatDisplayDate(record.startDate)} - ${formatDisplayDate(record.endDate)}</div>
                             <div class="history-duration">持续 ${duration} 天</div>
+                            ${symptomsHtml}
                         </div>
                         <button class="history-delete" onclick="deleteRecord(${data.records.indexOf(record)})">&times;</button>
                     </div>
@@ -1249,6 +1550,7 @@
                 updatePredictions();
                 renderHistory();
                 updateRecordStatus();
+                updateSymptomsUI();
             }
         }
 
